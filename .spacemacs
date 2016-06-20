@@ -27,16 +27,22 @@ values."
      themes-megapack
      ;; better-defaults
      emacs-lisp
+     gnus
      git
-     ;; markdown
+     finance
+     markdown
      org
      html
      python
+     django
+     colors
+     php
+     gtags
      ;; (shell :variables
      ;;        shell-default-height 30
      ;;        shell-default-position 'bottom)
      ;; spell-checking
-     ;; syntax-checking
+     syntax-checking
      ;; version-control
      )
    ;; List of additional packages that will be installed without being
@@ -114,7 +120,7 @@ values."
    ;; auto-save the file in-place, `cache' to auto-save the file to another
    ;; file stored in the cache directory and `nil' to disable auto-saving.
    ;; (default 'cache)
-   dotspacemacs-auto-save-file-location 'cache
+   dotspacemacs-auto-save-file-location nil
    ;; If non nil then `ido' replaces `helm' for some commands. For now only
    ;; `find-files' (SPC f f), `find-spacemacs-file' (SPC f e s), and
    ;; `find-contrib-file' (SPC f e c) are replaced. (default nil)
@@ -190,12 +196,169 @@ values."
   "Initialization function for user code.
 It is called immediately after `dotspacemacs/init'.  You are free to put any
 user code."
-  )
+
+  ) ;; end section
 
 (defun dotspacemacs/user-config ()
   "Configuration function for user code.
  This function is called at the very end of Spacemacs initialization after
 layers configuration. You are free to put any user code."
+  ;; ==============================
+  ;; GNUS
+  ;; ==============================
+  (require 'nnir)
+  ;; Get email, and store in nnml
+  (setq gnus-secondary-select-methods
+  '(
+    (nnimap "ito"
+            (nnimap-address
+             "imap.gmail.com")
+            (nnimap-server-port 993)
+            (nnimap-stream ssl)
+            (nnmail-expiry-target "nnimap+gmail:[Gmail]/Корзина")
+            (nnmail-expiry-wait 90))
+    (nnimap "TP1C"
+            (nnimap-address
+             "imap.gmail.com")
+            (nnimap-server-port 993)
+            (nnimap-stream ssl)
+            (nnmail-expiry-target "nnimap+gmail:[Gmail]/Корзина")
+            (nnmail-expiry-wait 90))
+    (nnimap "gmail"
+            (nnimap-address
+             "imap.gmail.com")
+            (nnimap-server-port 993)
+            (nnir-search-engine imap)
+            (nnimap-stream ssl)
+            (nnmail-expiry-target "nnimap+gmail:[Gmail]/Корзина")
+            (nnmail-expiry-wait 2))
+    ))
+
+  ;; Send email via Gmail:
+  (setq message-send-mail-function 'smtpmail-send-it
+        smtpmail-default-smtp-server "smtp.gmail.com")
+
+  ;; set return email address based on incoming email address
+  (setq gnus-posting-styles
+        '(((header "to" "nekrasov@itoplus.ru")
+           (address "nekrasov@itoplus.ru"))
+          ((header "to" "TP1C@itoplus.ru")
+           (address "TP1C@itoplus.ru"))
+          ((header "to" "dmitrij.nekrasov@gmail.com")
+           (address "dmitrij.nekrasov@gmail.com"))))
+
+  ;; store email in ~/gmail directory
+  (setq nnml-directory "~/gmail")
+  (setq message-directory "~/gmail")
+
+
+  ;; http://groups.google.com/group/gnu.emacs.gnus/browse_thread/thread/a673a74356e7141f
+  (when window-system
+    (setq gnus-sum-thread-tree-indent "  ")
+    (setq gnus-sum-thread-tree-root "") ;; "● ")
+    (setq gnus-sum-thread-tree-false-root "") ;; "◯ ")
+    (setq gnus-sum-thread-tree-single-indent "") ;; "◎ ")
+    (setq gnus-sum-thread-tree-vertical        "│")
+    (setq gnus-sum-thread-tree-leaf-with-other "├─► ")
+    (setq gnus-sum-thread-tree-single-leaf     "╰─► "))
+  (setq gnus-summary-line-format
+        (concat
+         "%0{%U%R%z%}"
+         "%3{│%}" "%1{%d%}" "%3{│%}" ;; date
+         "  "
+         "%4{%-20,20f%}"               ;; name
+         "  "
+         "%3{│%}"
+         " "
+         "%1{%B%}"
+         "%s\n"))
+  (setq gnus-summary-display-arrow t)
+
+
+  ;; =================================
+  ;; ORG MODE
+  ;; =================================
+  (with-eval-after-load 'org
+    (setq org-directory "~/notes/")
+
+    (setq org-files (append (file-expand-wildcards (concat org-directory "*/*.org"))
+                            (file-expand-wildcards (concat org-directory "*/*/*.org"))))
+
+    (setq org-default-notes-file
+          (concat org-directory "todo.org"))
+
+    (setq org-todo-keywords
+          '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
+            (sequence "WAITING(w)" "|" "CANCELLED(c)")))
+    (setq org-agenda-files (append
+                            (file-expand-wildcards (concat org-directory "*.org"))
+                            (file-expand-wildcards (concat org-directory "/archive/*.org"))))
+
+    (setq org-log-done t)
+
+    (setq org-capture-templates
+          '(("t" "Todo" entry (file+headline org-default-notes-file "Tasks")
+             "* TODO %?" :prepend t)
+            ("n" "Note" entry (file+headline org-default-notes-file "Notes")
+             "* %?")
+            ("T" "Project Todo" entry (file+headline gf/current-project-file "Tasks")
+             "* TODO %?" :prepend t)
+            ("N" "Project Note" entry (file+headline gf/current-project-file "Notes")
+             "* %?")
+            ))
+    ; Overwrite the current window with the agenda
+    (setq org-agenda-window-setup 'current-window)
+
+
+    ;; ===============================
+    ;; PROJECTILE
+    ;; ===============================
+    (defvar org-projects-dir (expand-file-name  "~/notes/projects"))
+
+    (defun gf/create-org-path (path)
+      "Create a name suitable for an org file from the last part of a file
+path."
+      (let ((last (car (last (split-string (if (equal (substring path -1) "/")
+                                               (substring path 0 -1) path) "/")))))
+        (concat org-projects-dir "/"
+                (downcase
+                 (replace-regexp-in-string
+                  "\\." "-" (if (equal (substring last 0 1) ".")
+                                (substring last 1) last)))
+                ".org")))
+
+    (defun gf/project-org-file ()
+      "Get the path of the org file for the current project."
+      (gf/create-org-path (projectile-project-root)))
+
+    (defun gf/switch-to-project-org-file ()
+      "Switch to the org file for the current project."
+      (interactive)
+      (find-file (gf/project-org-file)))
+
+    (defvar gf/previous-project-buffers (make-hash-table :test 'equal))
+
+    (defun gf/toggle-switch-to-project-org-file ()
+      "Alternate between the current buffer and the org file for the
+current project."
+      (interactive)
+      (if (and
+           (string-equal "org-mode" (symbol-name major-mode))
+           (s-contains-p "/notes/" (buffer-file-name)))
+          (if (gethash (buffer-file-name) gf/previous-project-buffers)
+              (switch-to-buffer (gethash (buffer-file-name) gf/previous-project-buffers))
+            (error "Previous project buffer not found"))
+        (let ((file (gf/project-org-file)))
+          (puthash file (current-buffer) gf/previous-project-buffers)
+          (find-file file)
+          )))
+    )
+
+  ;; DIRED
+
+  (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file) ; was dired-advertised-find-file
+  (define-key dired-mode-map (kbd "^") (lambda () (interactive) (find-alternate-file "..")))  ; was dired-up-directory
+
   ;; Settings
   (setq-default
    powerline-default-separator 'alternate)
@@ -208,7 +371,51 @@ layers configuration. You are free to put any user code."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(org-agenda-files (quote ("~/Dropbox/org/org.org"))))
+ '(compilation-message-face (quote default))
+ '(cua-global-mark-cursor-color "#2aa198")
+ '(cua-normal-cursor-color "#657b83")
+ '(cua-overwrite-cursor-color "#b58900")
+ '(cua-read-only-cursor-color "#859900")
+ '(highlight-changes-colors (quote ("#d33682" "#6c71c4")))
+ '(highlight-symbol-colors
+   (--map
+    (solarized-color-blend it "#fdf6e3" 0.25)
+    (quote
+     ("#b58900" "#2aa198" "#dc322f" "#6c71c4" "#859900" "#cb4b16" "#268bd2"))))
+ '(highlight-symbol-foreground-color "#586e75")
+ '(highlight-tail-colors
+   (quote
+    (("#eee8d5" . 0)
+     ("#B4C342" . 20)
+     ("#69CABF" . 30)
+     ("#69B7F0" . 50)
+     ("#DEB542" . 60)
+     ("#F2804F" . 70)
+     ("#F771AC" . 85)
+     ("#eee8d5" . 100))))
+ '(hl-bg-colors
+   (quote
+    ("#DEB542" "#F2804F" "#FF6E64" "#F771AC" "#9EA0E5" "#69B7F0" "#69CABF" "#B4C342")))
+ '(hl-fg-colors
+   (quote
+    ("#fdf6e3" "#fdf6e3" "#fdf6e3" "#fdf6e3" "#fdf6e3" "#fdf6e3" "#fdf6e3" "#fdf6e3")))
+ '(magit-diff-use-overlays nil)
+ '(nrepl-message-colors
+   (quote
+    ("#dc322f" "#cb4b16" "#b58900" "#546E00" "#B4C342" "#00629D" "#2aa198" "#d33682" "#6c71c4")))
+ '(org-default-notes-file "todo.org")
+ '(pos-tip-background-color "#eee8d5")
+ '(pos-tip-foreground-color "#586e75")
+ '(smartrep-mode-line-active-bg (solarized-color-blend "#859900" "#eee8d5" 0.2))
+ '(term-default-bg-color "#fdf6e3")
+ '(term-default-fg-color "#657b83")
+ '(weechat-color-list
+   (quote
+    (unspecified "#fdf6e3" "#eee8d5" "#990A1B" "#dc322f" "#546E00" "#859900" "#7B6000" "#b58900" "#00629D" "#268bd2" "#93115C" "#d33682" "#00736F" "#2aa198" "#657b83" "#839496")))
+ '(xterm-color-names
+   ["#eee8d5" "#dc322f" "#859900" "#b58900" "#268bd2" "#d33682" "#2aa198" "#073642"])
+ '(xterm-color-names-bright
+   ["#fdf6e3" "#cb4b16" "#93a1a1" "#839496" "#657b83" "#6c71c4" "#586e75" "#002b36"]))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

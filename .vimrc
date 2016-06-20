@@ -17,15 +17,15 @@ Plugin 'majutsushi/tagbar'              " Class/module browser
 "------------------=== Other ===----------------------
 Plugin 'bling/vim-airline'              " lean & mean status/tabline for vim that's light as air
 Plugin 'fisadev/FixedTaskList.vim'      " Pending tasks list
-Plugin 'rosenfeld/conque-term'          " Consoles as buffers
+"Plugin 'rosenfeld/conque-term'          " Consoles as buffers
 Plugin 'tpope/vim-surround'             " Parentheses, brackets, quotes, XML tags, and more
 Plugin 'sjl/vitality.vim'               " Change cursor
 
 "--------------=== Snippets support ===---------------
-Plugin 'garbas/vim-snipmate'            " Snippets manager
-Plugin 'MarcWeber/vim-addon-mw-utils'   " Dependencies #1
-Plugin 'tomtom/tlib_vim'                " Dependencies #2
-Plugin 'honza/vim-snippets'             " Snippets repo
+"Plugin 'garbas/vim-snipmate'            " Snippets manager
+"Plugin 'MarcWeber/vim-addon-mw-utils'   " Dependencies #1
+"Plugin 'tomtom/tlib_vim'                " Dependencies #2
+"Plugin 'honza/vim-snippets'             " Snippets repo
 
 "---------------=== Languages support ===-------------
 Plugin 'scrooloose/syntastic'           " Syntax checking plugin for Vim
@@ -33,8 +33,8 @@ Plugin 'tpope/vim-commentary'           " Comment stuff out
 Plugin 'mitsuhiko/vim-sparkup'          " Sparkup (XML/jinja/htlm-django/etc.) support
 
 " --- CSS ---
-Plugin 'JulesWang/css.vim'              " CSS syntax file
-Plugin 'groenewege/vim-less'            " Vim syntax for LESS (dynamic CSS)
+"Plugin 'JulesWang/css.vim'              " CSS syntax file
+"Plugin 'groenewege/vim-less'            " Vim syntax for LESS (dynamic CSS)
 
 " --- JavaScript ---
 Plugin 'pangloss/vim-javascript'        " Vastly improved Javascript indentation and syntax support in Vim
@@ -66,6 +66,7 @@ aunmenu Help.
 aunmenu Window.
 let no_buffers_menu=1
 set mousemodel=popup
+set t_Co=256
 
 " Activate a permanent ruler and add line highlightng as well as numbers.
 " Also disable the sucking pydoc preview window for the omni completion
@@ -79,7 +80,7 @@ endif
 set ttyfast
 
 "colorscheme Tomorrow-Night
-colorscheme Tomorrow
+"colorscheme codeschool
 " set guifont=Consolas:h13
 set guifont=DejaVu\ Sans\ Mono\ for\ Powerline:h13
 
